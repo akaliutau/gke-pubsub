@@ -1,0 +1,19 @@
+---
+spring:
+  config:
+    activate:
+      on-profile: default
+---
+spring:
+  config:
+    activate:
+      on-profile: production
+---
+server:
+  port: 9000
+
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true

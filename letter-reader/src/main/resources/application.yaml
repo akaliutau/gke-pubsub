@@ -1,0 +1,33 @@
+---
+spring:
+  config:
+    activate:
+      on-profile: default
+---
+spring:
+  config:
+    activate:
+      on-profile: production
+---
+server:
+  port: 8080
+
+time-to-read-sec: 180
+
+grpc:
+  client:
+    defaultScheme: dns
+
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+
+
+
+
+spring:
+  main:
+    allow-bean-definition-overriding: true

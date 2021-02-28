@@ -1,0 +1,29 @@
+FROM alpine:latest as packager
+
+RUN apk --no-cache --update add openjdk11-jdk openjdk11-jmods ca-certificates
+
+ENV JAVA_MINIMAL="/opt/java-minimal"
+
+# build minimal JRE
+RUN /usr/lib/jvm/java-11-openjdk/bin/jlink \
+    --verbose \
+    --add-modules \
+        java.base,java.sql,java.naming,java.desktop,java.management,java.security.jgss,java.instrument \
+    --compress 2 --strip-debug --no-header-files --no-man-pages \
+    --release-info="add:IMPLEMENTOR=akalu:IMPLEMENTOR_VERSION=akalu_JRE" \
+    --output "$JAVA_MINIMAL"
+
+FROM alpine:latest
+
+ENV JAVA_HOME=/opt/java-minimal
+ENV PATH="$PATH:$JAVA_HOME/bin"
+
+COPY --from=packager "$JAVA_HOME" "$JAVA_HOME"
+COPY target/letter-reader-0.0.1.jar reader-app.jar
+
+RUN echo "$JAR_FILE"
+ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-jar", "reader-app.jar"]
+
+EXPOSE 8080
+EXPOSE 8085
+EXPOSE 8432
