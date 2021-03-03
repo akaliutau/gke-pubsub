@@ -20,7 +20,7 @@ Each message has the following format:
 
 ```
 {
-  "id": "unique uuid",
+  "id": "<unique uuid>",
   "recent_attemtps": 1
 }
 ```
@@ -30,7 +30,7 @@ Each message has the following format:
 
 There is a 2nd topic with name `read_letters`, which is used to count the total number of processed messages. 
 The dashboard app is basically just an interface to this topic, and collects other useful statistics along the way.
-Dashboard's api is available via Swagger at `http://localhost:9000/swagger-ui`
+Dashboard's api is available via Swagger at `https://localhost:9000/swagger-ui/`
 
 # How to build
 
@@ -155,22 +155,26 @@ sudo docker run -ti --rm -p 9000:9000 \
   --volume=$GOOGLE_APPLICATION_CREDENTIALS:/secrets/adc.json \
   gcr.io/$GOOGLE_CLOUD_PROJECT/gcp-dashboard:v1
 ```
-(6) Generate temporary SSL certificates with the help of `cerbot` or selfsigned cert with the help of openssl utility:
+(6) Generate temporary SSL certificates with the help of `cerbot` 
 
 ```
 python3 -m venv venv
 source ./venv/bin/activate
 pip install -r requirements.txt
+python3 cerbot <args>
 ```
 
-```
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout selfsigned.key -out selfsigned.crt
+OR as an alternative create self-signed certificates with the help of openssl utility:
 
+```
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+        -keyout ./terraform/secrets/dashboard-private.key \
+        -out ./terraform/secrets/dashboard-certificate.crt
 ```
 
 (7) Create infrastructure using Terraform:
 
-For Terraform it's necessary to add the following variables:
+For Terraform it's necessary to set in file set_env.sh the following variables:
 
 ```
 export TF_VAR_google_app_creds=$GOOGLE_APPLICATION_CREDENTIALS
@@ -294,6 +298,7 @@ https://cloud.google.com/kubernetes-engine/docs/concepts/cluster-architecture#me
 
 https://cloud.google.com/compute/docs/general-purpose-machines#e2-shared-core
 
+Note, for Docker-based java apps its better to choose `e2-small` at least 
 
 (3) Boot time optimisation:
 
@@ -307,4 +312,7 @@ cause=java.lang.RuntimeException: java.net.UnknownHostException: pubsub.googleap
 at io.grpc.internal.DnsNameResolver.resolveAddresses(DnsNameResolver.java:223) 
 at io.grpc.internal.DnsNameResolver.doResolve(DnsNameResolver.java:282)
 ```
+
+Such messages are solid hints that some configuration parameters (such as timeouts, etc) need tuning
+For example, for liveness_probe.timeout_seconds it's better to set a min value starting from 5s (the default value in 1s is too small)
 
