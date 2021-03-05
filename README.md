@@ -213,6 +213,21 @@ terraform apply -destroy
 
 ## Set up and tune up a scaling group
 
+Here and next a recipe from [5] is applied
+
+First, deploying the Custom Metrics Adapter:
+
+```
+https://cloud.google.com/kubernetes-engine/docs/tutorials/autoscaling-metrics#step1
+```
+
+The name of metric can be picked up from [metrics-explorer](https://console.cloud.google.com/monitoring/metrics-explorer)
+
+Here we are using `pubsub.googleapis.com|subscription|num_undelivered_messages`
+
+Created metrics are available via GKE -> Workloads -> letter-reader -> Autoscaler
+
+
 # Running application locally
 
 Build app using command `mvn clean package`, then use the command `java -jar target/pubsub-0.0.1-SNAPSHOT.jar` to run an app in a separate window.
@@ -228,13 +243,15 @@ Build app using command `mvn clean package`, then use the command `java -jar tar
 
 [4] https://cloud.google.com/docs/terraform (an open-source infrastructure as code software tool created by HashiCorp)
 
-[5] https://www.gcpweekly.com/gcp-resources
+[5] https://cloud.google.com/kubernetes-engine/docs/tutorials/autoscaling-metrics#pubsub
 
-[6] https://cloud.google.com/compute/docs/instances/access-overview
+[6] https://www.gcpweekly.com/gcp-resources
 
-[7] https://kubernetes.io/docs/tasks/tools/install-kubectl/ (Kubectl is a command line tool for controlling Kubernetes clusters)
+[7] https://cloud.google.com/compute/docs/instances/access-overview
 
-[8] https://github.com/steinim/gcp-terraform-workshop
+[8] https://kubernetes.io/docs/tasks/tools/install-kubectl/ (Kubectl is a command line tool for controlling Kubernetes clusters)
+
+[9] https://github.com/steinim/gcp-terraform-workshop
 
 
 # Appendix 1. Terraform installation on Ubuntu 20.04 LTS
@@ -315,4 +332,12 @@ at io.grpc.internal.DnsNameResolver.doResolve(DnsNameResolver.java:282)
 
 Such messages are solid hints that some configuration parameters (such as timeouts, etc) need tuning
 For example, for liveness_probe.timeout_seconds it's better to set a min value starting from 5s (the default value in 1s is too small)
+
+(4) Autoscaling
+
+check custom metrics driver was deployed and running:
+
+```
+kubectl describe hpa
+```
 
