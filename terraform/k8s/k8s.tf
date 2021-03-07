@@ -4,6 +4,7 @@
 # https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/guides/getting-started
 #####################################################################
 data "google_client_config" "provider" {}
+
 resource "kubernetes_cluster_role_binding" "sa-cluster-bind" {
   metadata {
     name = "cluster-admin-binding"
@@ -37,6 +38,11 @@ resource "kubernetes_cluster_role_binding" "sa-cluster-bind" {
     kind      = "Group"
     name      = "system:anonymous"
     api_group = "rbac.authorization.k8s.io"
+  }
+  subject {
+    kind      = "ServiceAccount"
+    name      = "horizontal-pod-autoscaler"
+    namespace = "kube-system"
   }
 }
 

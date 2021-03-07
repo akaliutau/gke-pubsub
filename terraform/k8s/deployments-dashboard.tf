@@ -51,7 +51,7 @@ resource "kubernetes_deployment" "dashboard" {
             timeout_seconds = "5"
             http_get {
               port =  "9000"
-              path = "/actuator/health"
+              path = "/health"
             }
           }
 
@@ -61,7 +61,7 @@ resource "kubernetes_deployment" "dashboard" {
             timeout_seconds = "5"
             http_get {
               port =  "9000"
-              path = "/actuator/health"
+              path = "/health"
             }
           }
 

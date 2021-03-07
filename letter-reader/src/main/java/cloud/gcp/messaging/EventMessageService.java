@@ -1,116 +1,67 @@
 package cloud.gcp.messaging;
 
+import cloud.gcp.config.ServiceState;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.google.pubsub.v1.PubsubMessage;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.cloud.gcp.pubsub.core.PubSubTemplate;
-import org.springframework.cloud.gcp.pubsub.integration.AckMode;
-import org.springframework.cloud.gcp.pubsub.integration.inbound.PubSubInboundChannelAdapter;
-import org.springframework.cloud.gcp.pubsub.integration.outbound.PubSubMessageHandler;
-import org.springframework.cloud.gcp.pubsub.support.BasicAcknowledgeablePubsubMessage;
-import org.springframework.cloud.gcp.pubsub.support.GcpPubSubHeaders;
-import org.springframework.context.annotation.Bean;
-import org.springframework.integration.annotation.MessagingGateway;
-import org.springframework.integration.annotation.ServiceActivator;
-import org.springframework.integration.channel.DirectChannel;
-import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.MessageHandler;
-import org.springframework.messaging.MessagingException;
+import messaging.GCPublisher;
+import messaging.GCSubscriber;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
-import org.springframework.util.concurrent.ListenableFutureCallback;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.function.Consumer;
 
 @Service
 @Slf4j
-@EnableAutoConfiguration
+//@EnableAutoConfiguration
 public class EventMessageService {
 
-    @Value("${time-to-read-sec}")
-    private int timeToReadSec;
+    private static int timeToReadSec = 30;
 
-    @Autowired
-    private PubsubOutboundGateway messagingGateway;
+    private String projectId;
 
+    private static final Gson gson = new Gson().newBuilder().setPrettyPrinting().create();
 
-    /**
-     * Creates an inbound channel adapter to listen to the subscription  `postbox`
-     */
-    @Bean
-    public PubSubInboundChannelAdapter messageChannelAdapter(
-            @Qualifier("pubsubPostBox") MessageChannel inputChannel, PubSubTemplate pubSubTemplate) {
-        PubSubInboundChannelAdapter adapter = new PubSubInboundChannelAdapter(pubSubTemplate, "postbox");
-        adapter.setOutputChannel(inputChannel);
-        adapter.setAckMode(AckMode.MANUAL);
-        return adapter;
+    private GCPublisher pubsubReadLetterPublisher;
+    private GCSubscriber pubsubPostboxSubscriber;
+
+    @Getter
+    private ServiceState state;
+
+    public EventMessageService(ServiceState state, Environment env) throws IOException {
+        projectId = env.getRequiredProperty("GOOGLE_CLOUD_PROJECT");
+        pubsubReadLetterPublisher = new GCPublisher(projectId, "read_letters");
+        pubsubPostboxSubscriber = new GCSubscriber(projectId, "postbox", onMessage());
+        pubsubPostboxSubscriber.start();
+        this.state = state;
+        log.info("creating an EventMessageService for project = {} sec", projectId);
     }
 
-    /**
-     * Creates a message channel for messages from postbox
-     */
-    @Bean
-    @Qualifier("pubsubPostBox")
-    public MessageChannel pubsubPostBox() {
-        return new DirectChannel();
-    }
-
-    @MessagingGateway(defaultRequestChannel = "pubsubReadLetters")
-    public interface PubsubOutboundGateway {
-        void sendToPubsub(String msg) throws MessagingException;
-    }
-
-    /**
-     * A simple message publisher.
-     */
-    @Bean
-    @ServiceActivator(inputChannel = "pubsubReadLetters")
-    public MessageHandler messageSender(PubSubTemplate pubsubTemplate) {
-        PubSubMessageHandler adapter = new PubSubMessageHandler(pubsubTemplate, "read_letters");
-
-        ListenableFutureCallback<String> callback = new ListenableFutureCallback<>() {
-
-            @Override
-            public void onSuccess(String result) {
-                log.info("Message was sent to read_letters topic, result: {}", result);
-            }
-
-            @Override
-            public void onFailure(Throwable ex) {
-                log.info("Error sending a message due to {}", ex.getMessage());
-            }
-        };
-
-        adapter.setPublishCallback(callback);
-        return adapter;
-    }
-
-
-    /**
-     * A simple message handler.
-     */
-    @Bean
-    @ServiceActivator(inputChannel = "pubsubPostBox")
-    public MessageHandler messageReceiver() {
+    private Consumer<PubsubMessage> onMessage() {
         return message -> {
-            String msg = new String((byte[]) message.getPayload());
+            Map<String, String> msg = gson.fromJson(
+                    message.getData().toStringUtf8(),
+                    new TypeToken<Map<String, String>>() {
+                    }.getType());
             log.info("Message: {} ", msg);
             log.info("Start reading");
             try {
-                log.info("sleeping for {} sec", timeToReadSec);
-                Thread.sleep(timeToReadSec);
+                Thread.sleep(timeToReadSec * 1000);
             } catch (InterruptedException e) {
-                log.warn("Interrupted with message {}", e.getMessage());
+                log.error(e.getMessage());
             }
             log.info("Finish reading");
-            BasicAcknowledgeablePubsubMessage originalMessage = message.getHeaders()
-                    .get(GcpPubSubHeaders.ORIGINAL_MESSAGE, BasicAcknowledgeablePubsubMessage.class);
-            if (originalMessage != null) {
-                log.info("acknowledged");
-                originalMessage.ack();
-            } else {
-                log.warn("cannot extract original message");
-            }
-            messagingGateway.sendToPubsub(msg);
+            this.pubsubReadLetterPublisher.publish(message.getData().toStringUtf8());
         };
     }
+
+    public void close() throws Exception {
+        pubsubReadLetterPublisher.close();
+        pubsubPostboxSubscriber.close();
+    }
+
 }

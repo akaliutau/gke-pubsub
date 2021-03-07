@@ -2,7 +2,6 @@ package cloud.gcp.config;
 
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
-import org.springframework.cloud.gcp.autoconfigure.pubsub.GcpPubSubEmulatorAutoConfiguration;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.Executors;
@@ -19,7 +18,7 @@ public class CustomHealthIndicator implements HealthIndicator {
                 Executors.newSingleThreadScheduledExecutor();
         scheduled.schedule(() -> {
             isHealthy = true;
-        }, 30, TimeUnit.SECONDS);
+        }, 10, TimeUnit.SECONDS);
     }
 
     @Override

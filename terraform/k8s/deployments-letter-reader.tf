@@ -50,17 +50,17 @@ resource "kubernetes_deployment" "letter-reader" {
             timeout_seconds = "5"
             http_get {
               port =  "8080"
-              path = "/actuator/health"
+              path = "/health"
             }
           }
 
          readiness_probe {
             initial_delay_seconds = "20"
             period_seconds = "30"
-           timeout_seconds = "5"
+            timeout_seconds = "5"
             http_get {
               port =  "8080"
-              path = "/actuator/health"
+              path = "/health"
             }
           }
 

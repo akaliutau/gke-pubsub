@@ -27,7 +27,6 @@ public class StatisticsAPI {
 
     @GetMapping("/statistics/download")
     void download() {
-
     }
 
 

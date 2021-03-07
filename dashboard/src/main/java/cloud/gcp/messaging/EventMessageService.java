@@ -1,74 +1,61 @@
 package cloud.gcp.messaging;
 
+import cloud.gcp.service.ServiceState;
 import cloud.gcp.service.StatisticsService;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.google.pubsub.v1.PubsubMessage;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.cloud.gcp.pubsub.core.PubSubTemplate;
-import org.springframework.cloud.gcp.pubsub.integration.AckMode;
-import org.springframework.cloud.gcp.pubsub.integration.inbound.PubSubInboundChannelAdapter;
-import org.springframework.cloud.gcp.pubsub.support.BasicAcknowledgeablePubsubMessage;
-import org.springframework.cloud.gcp.pubsub.support.GcpPubSubHeaders;
-import org.springframework.context.annotation.Bean;
-import org.springframework.integration.annotation.ServiceActivator;
-import org.springframework.integration.channel.DirectChannel;
-import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.MessageHandler;
+import messaging.GCSubscriber;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.Map;
+import java.util.function.Consumer;
 
 @Service
 @Slf4j
+@EnableAutoConfiguration
 public class EventMessageService {
 
-    private final Gson gson;
+    private String projectId;
+
+    private static final Gson gson = new Gson().newBuilder().setPrettyPrinting().create();
     private StatisticsService statisticsService;
+    private GCSubscriber pubsubReadLetterSubscriber;
 
-    private EventMessageService(StatisticsService statisticsService) {
+    @Getter
+    private ServiceState state;
+
+    private EventMessageService(ServiceState state, StatisticsService statisticsService, Environment env) throws IOException {
         this.statisticsService = statisticsService;
-        this.gson = new Gson().newBuilder().setPrettyPrinting().create();
-    }
-
-    /**
-     * Creates an inbound channel adapter to listen to the subscription  `read_letters`
-     */
-    @Bean
-    public PubSubInboundChannelAdapter messageChannelAdapter(
-            @Qualifier("pubsubReadLetters") MessageChannel inputChannel, PubSubTemplate pubSubTemplate) {
-        PubSubInboundChannelAdapter adapter = new PubSubInboundChannelAdapter(pubSubTemplate, "read_letters");
-        adapter.setOutputChannel(inputChannel);
-        adapter.setAckMode(AckMode.MANUAL);
-        return adapter;
-    }
-
-    /**
-     * Creates a message channel for messages from read_letters
-     */
-    @Bean
-    @Qualifier("pubsubReadLetters")
-    public MessageChannel pubsubReadLetters() {
-        return new DirectChannel();
+        projectId = env.getRequiredProperty("GOOGLE_CLOUD_PROJECT");
+        pubsubReadLetterSubscriber = new GCSubscriber(projectId, "read_letters", onMessage());
+        pubsubReadLetterSubscriber.start();
+        log.info("creating an EventMessageService for project = {} sec", projectId);
     }
 
     /**
      * A simple message handler.
      */
-    @Bean
-    @ServiceActivator(inputChannel = "pubsubReadLetters")
-    public MessageHandler messageReceiver() {
+    private Consumer<PubsubMessage> onMessage() {
         return message -> {
             Map<String, String> msg = gson.fromJson(
-                    new String((byte[]) message.getPayload()),
+                    message.getData().toStringUtf8(),
                     new TypeToken<Map<String, String>>() {
                     }.getType());
-            log.info("Message: {} ", msg);
+            log.info("Message added to statistics: {} ", msg);
             statisticsService.addId(msg.get("id"));
             statisticsService.incTotalLettersRead(1);
-            BasicAcknowledgeablePubsubMessage originalMessage = message.getHeaders()
-                    .get(GcpPubSubHeaders.ORIGINAL_MESSAGE, BasicAcknowledgeablePubsubMessage.class);
-            originalMessage.ack();
         };
     }
+
+    public void close() throws Exception {
+        pubsubReadLetterSubscriber.close();
+    }
+
+
 }

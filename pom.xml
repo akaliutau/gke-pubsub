@@ -15,7 +15,7 @@
     <modules>
         <module>dashboard</module>
         <module>letter-reader</module>
-        <module>utils</module>
+        <module>utility</module>
     </modules>
 
     <properties>

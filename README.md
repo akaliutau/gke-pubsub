@@ -95,6 +95,19 @@ To access cloud instances the SSH key is needed, it can be created using the fol
 ssh-keygen -t rsa -f ~/.ssh/pubsub_rsa -C $USERNAME -b 2048
 ```
 
+# Kubernetes
+
+Authorise your installation of kubectl to work with GKE cluster:
+```
+gcloud container clusters get-credentials letter-processing-cluster
+```
+As a result, the configuration entry will be generated and persisted in file `$HOME/.kube/config`
+Note: Running gcloud container clusters get-credentials also changes the current context for kubectl to that cluster, i.e. 
+from this moment all k8s commands will be tied with  letter-processing-cluster, for example:
+
+```
+
+```
 
 # Settings on GCP side
 

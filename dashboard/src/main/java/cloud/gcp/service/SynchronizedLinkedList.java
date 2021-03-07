@@ -48,7 +48,7 @@ public class SynchronizedLinkedList<T> {
 
     Optional<T> getLast() {
         synchronized (lock) {
-            return list.isEmpty() ? Optional.empty() : Optional.of(list.pollLast());
+            return list.isEmpty() ? Optional.empty() : Optional.of(list.peekLast());
         }
     }
 

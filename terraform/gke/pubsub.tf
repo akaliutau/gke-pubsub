@@ -8,6 +8,9 @@ resource "google_pubsub_subscription" "postbox" {
   name = "postbox"
   topic = google_pubsub_topic.postbox[0].name
   ack_deadline_seconds = 600
+  labels = {
+    subscription_id = "postbox"
+  }
 
   expiration_policy {
     ttl = "" # never

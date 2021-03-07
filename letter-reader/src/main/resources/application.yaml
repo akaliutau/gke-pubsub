@@ -12,8 +12,6 @@ spring:
 server:
   port: 8080
 
-time-to-read-sec: 180
-
 grpc:
   client:
     defaultScheme: dns
@@ -21,13 +19,23 @@ grpc:
 management:
   endpoint:
     health:
+      show-details: ALWAYS
       probes:
         enabled: true
-
-
+  endpoints:
+    web:
+      exposure:
+        include: "*"
 
 
 
 spring:
   main:
     allow-bean-definition-overriding: true
+
+  cloud:
+    gcp:
+      pubsub:
+        subscriber:
+          executor-threads: 1
+          parallel-pull-count: 1
