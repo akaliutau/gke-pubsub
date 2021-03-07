@@ -1,5 +1,7 @@
 package messaging;
 
+import com.google.api.gax.core.ExecutorProvider;
+import com.google.api.gax.core.InstantiatingExecutorProvider;
 import com.google.cloud.pubsub.v1.AckReplyConsumer;
 import com.google.cloud.pubsub.v1.MessageReceiver;
 import com.google.cloud.pubsub.v1.Subscriber;
@@ -13,10 +15,16 @@ import java.util.function.Consumer;
 @Slf4j
 public class GCSubscriber implements AutoCloseable {
 
-    final ProjectSubscriptionName subsName;
-    final Subscriber subscriber;
+    private final ProjectSubscriptionName subsName;
+    private final Subscriber subscriber;
 
     public GCSubscriber(String projectId, String subscriptionName, Consumer<PubsubMessage> onMessage) throws IOException {
+        // process only 1 message in any time
+        ExecutorProvider executorProvider =
+                InstantiatingExecutorProvider.newBuilder()
+                        .setExecutorThreadCount(1)
+                        .build();
+
         // Instantiate an asynchronous message receiver.
         MessageReceiver receiver =
                 (PubsubMessage message, AckReplyConsumer consumer) -> {
@@ -29,6 +37,7 @@ public class GCSubscriber implements AutoCloseable {
         log.info("subsName = {}", subsName);
         this.subscriber = Subscriber.newBuilder(subsName, receiver)
                 .setParallelPullCount(1)
+                .setSystemExecutorProvider(executorProvider)
                 .build();
     }
 

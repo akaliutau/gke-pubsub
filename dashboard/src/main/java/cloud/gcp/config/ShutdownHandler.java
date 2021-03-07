@@ -16,7 +16,7 @@ public class ShutdownHandler {
 
     @PreDestroy
     public void preDestroyHook() {
-        log.info("Service is about to shotdown, the state is {}", eventMessageService.getState());
+        log.info("Service is about to shutdown, the state is {}", eventMessageService.getState());
         try {
             eventMessageService.close();
         } catch (Exception e) {

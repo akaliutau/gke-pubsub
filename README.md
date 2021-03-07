@@ -358,7 +358,7 @@ at io.grpc.internal.DnsNameResolver.doResolve(DnsNameResolver.java:282)
 Such messages are solid hints that some configuration parameters (such as timeouts, etc) need tuning
 For example, for liveness_probe.timeout_seconds it's better to set a min value starting from 5s (the default value in 1s is too small)
 
-(4) Autoscaling
+(4) Autoscaling related
 
 check custom metrics driver was deployed and running:
 

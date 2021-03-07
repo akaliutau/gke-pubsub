@@ -11,6 +11,7 @@ import com.google.pubsub.v1.TopicName;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -26,9 +27,24 @@ public class GCPublisher implements AutoCloseable {
     }
 
     public void publish(String message) {
-        ByteString data = ByteString.copyFromUtf8(message);
-        PubsubMessage pubsubMessage = PubsubMessage.newBuilder().setData(data).build();
+        handler(
+                PubsubMessage
+                        .newBuilder()
+                        .setData(ByteString.copyFromUtf8(message))
+                        .build()
+        );
+    }
 
+    public void publish(Collection<String> messages) {
+        messages.forEach(m -> handler(
+                PubsubMessage
+                        .newBuilder()
+                        .setData(ByteString.copyFromUtf8(m))
+                        .build()
+        ));
+    }
+
+    private void handler(PubsubMessage pubsubMessage){
         // Once published, returns a server-assigned message id (unique within the topic)
         // Add an asynchronous callback to handle success / failure
         ApiFutures.addCallback(
@@ -42,7 +58,7 @@ public class GCPublisher implements AutoCloseable {
                             log.error("{}", apiException.getStatusCode().getCode());
                             log.error("{}", apiException.isRetryable());
                         }
-                        log.error("Error publishing message {}", message);
+                        log.error("Error publishing message {}", pubsubMessage.getData());
                     }
 
                     @Override
@@ -52,14 +68,19 @@ public class GCPublisher implements AutoCloseable {
                 },
                 MoreExecutors.directExecutor()
         );
+
     }
 
-    @Override
-    public void close() throws Exception {
+        @Override
+    public void close() {
         if (publisher != null) {
-            // When finished with the publisher, shutdown to free up resources.
-            publisher.shutdown();
-            publisher.awaitTermination(1, TimeUnit.MINUTES);
+            try {
+                // When finished with the publisher, shutdown to free up resources.
+                publisher.shutdown();
+                publisher.awaitTermination(1, TimeUnit.MINUTES);
+            } catch (InterruptedException e) {
+                log.error(e.getMessage());
+            }
         }
     }
 }
