@@ -9,11 +9,12 @@ resource "kubernetes_service_account" "metrics_driver"{
   metadata {
     name        = "custom-metrics-stackdriver-adapter"
     namespace   = "custom-metrics"
-#    annotations = {
-#      "iam.gke.io/gcp-service-account"="custom-metrics-stackdriver-adapter@${var.project}.iam.gserviceaccount.com"
-#    }
-  }
 
+    annotations = {
+      "iam.gke.io/gcp-service-account"="custom-metrics-stackdriver-adapter@${var.project}.iam.gserviceaccount.com"
+    }
+  }
+  depends_on = [kubernetes_namespace.custom-metrics]
 }
 
 resource "kubernetes_deployment" "driver-deployment" {

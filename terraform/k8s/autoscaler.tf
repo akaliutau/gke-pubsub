@@ -6,7 +6,7 @@ resource "kubernetes_horizontal_pod_autoscaler" "default-scaler" {
 
   spec {
     min_replicas = 1
-    max_replicas = 11
+    max_replicas = 10
 
     scale_target_ref {
       kind = "Deployment"
@@ -21,8 +21,7 @@ resource "kubernetes_horizontal_pod_autoscaler" "default-scaler" {
           name = "pubsub.googleapis.com|subscription|num_undelivered_messages"
           selector {
             match_labels = {
-              subscription_id = "postbox"
-              "resource.labels.subscription_id" = "postbox"
+               "resource.labels.subscription_id" = "postbox"
             }
           }
         }

@@ -99,15 +99,18 @@ ssh-keygen -t rsa -f ~/.ssh/pubsub_rsa -C $USERNAME -b 2048
 
 Authorise your installation of kubectl to work with GKE cluster:
 ```
-gcloud container clusters get-credentials letter-processing-cluster
+gcloud container clusters get-credentials letter-processing-cluster --zone=europe-west2
 ```
 As a result, the configuration entry will be generated and persisted in file `$HOME/.kube/config`
 Note: Running gcloud container clusters get-credentials also changes the current context for kubectl to that cluster, i.e. 
 from this moment all k8s commands will be tied with  letter-processing-cluster, for example:
 
-```
 
 ```
+kubectl get pods --all-namespaces
+kubectl describe hpa
+```
+
 
 # Settings on GCP side
 
@@ -243,8 +246,17 @@ Created metrics are available via GKE -> Workloads -> letter-reader -> Autoscale
 
 # Running application locally
 
-Build app using command `mvn clean package`, then use the command `java -jar target/pubsub-0.0.1-SNAPSHOT.jar` to run an app in a separate window.
+Build app using command `mvn clean package`, then use the command f.e. `java -jar ./letter-reader/target/letter-reader-0.0.1.jar` to run an app in a separate window.
  
+# Testing 
+
+Generate 50 messages using script:
+
+```
+scripts/message_generator.sh 50
+```
+Observe autoscaling of cluster in action using f.e. command `kubectl describe hpa`
+
 
 # References
 
