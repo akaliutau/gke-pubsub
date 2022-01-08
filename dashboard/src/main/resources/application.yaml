@@ -17,3 +17,6 @@ management:
     health:
       probes:
         enabled: true
+
+dashboard:
+   max-size: 1000
