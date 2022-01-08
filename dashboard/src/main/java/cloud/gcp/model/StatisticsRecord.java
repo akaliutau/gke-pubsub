@@ -41,4 +41,25 @@ public class StatisticsRecord implements Serializable {
                 this.numActiveInstances);
     }
 
+    public String[] asLine(){
+        return new String[]{
+                String.valueOf(this.totalLettersRead),
+                String.valueOf(this.totalDuplicateLetters),
+                String.valueOf(this.totalLettersReSent),
+                String.valueOf(this.numUnaskedMessages),
+                String.valueOf(this.numActiveInstances)
+        };
+    }
+
+    public static String[] getFields() {
+        return new String[]{
+                "totalLettersRead",
+                "totalDuplicateLetters",
+                "totalLettersReSent",
+                "numUnaskedMessages",
+                "numActiveInstances"
+        };
+    }
+
+
 }

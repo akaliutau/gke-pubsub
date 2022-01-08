@@ -14,7 +14,6 @@ public class HealthAPI {
         this.customHealthIndicator = customHealthIndicator;
     }
 
-
     @GetMapping("/health")
     public Health get() {
         return customHealthIndicator.health();

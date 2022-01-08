@@ -27,15 +27,12 @@ public class EventMessageService {
     private StatisticsService statisticsService;
     private GCSubscriber pubsubReadLetterSubscriber;
 
-    @Getter
-    private ServiceState state;
-
     private EventMessageService(ServiceState state, StatisticsService statisticsService, Environment env) throws IOException {
         this.statisticsService = statisticsService;
         projectId = env.getRequiredProperty("GOOGLE_CLOUD_PROJECT");
         pubsubReadLetterSubscriber = new GCSubscriber(projectId, "read_letters", onMessage());
         pubsubReadLetterSubscriber.start();
-        log.info("creating an EventMessageService for project = {} sec", projectId);
+        log.info("creating an EventMessageService for project = {}", projectId);
     }
 
     /**
@@ -53,7 +50,7 @@ public class EventMessageService {
         };
     }
 
-    public void close() throws Exception {
+    public void close() {
         pubsubReadLetterSubscriber.close();
     }
 

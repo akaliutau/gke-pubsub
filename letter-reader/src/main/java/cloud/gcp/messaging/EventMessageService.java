@@ -20,12 +20,11 @@ import java.util.stream.Collectors;
 @Slf4j
 public class EventMessageService {
 
-    private static int timeToReadSec = 30;
-
-    private String projectId;
+    private int timeToReadSec = 30;
 
     private static final Gson gson = new Gson().newBuilder().setPrettyPrinting().create();
 
+    private final String projectId;
     private GCPublisher pubsubReadLetterPublisher;
     private GCPublisher pubsubPostboxPublisher;// used for recovery only
     private GCSubscriber pubsubPostboxSubscriber;
@@ -41,7 +40,9 @@ public class EventMessageService {
         pubsubPostboxSubscriber.start();
         this.state = state;
         this.state.setStatus(ServiceState.ServiceStatus.WORKING);
-        log.info("creating an EventMessageService for project = {} sec", projectId);
+        log.info("creating an EventMessageService for project = {}", projectId);
+        log.info("timeToReadSec= {}", this.timeToReadSec);
+
     }
 
     private Consumer<PubsubMessage> onMessage() {
@@ -67,7 +68,7 @@ public class EventMessageService {
         };
     }
 
-    public void close() throws Exception {
+    public void close() {
         this.state.setStatus(ServiceState.ServiceStatus.STOPPING);
         pubsubReadLetterPublisher.close();
         pubsubPostboxSubscriber.close();

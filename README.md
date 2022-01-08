@@ -21,12 +21,12 @@ Each message has the following format:
 ```
 {
   "id": "<unique uuid>",
-  "recent_attemtps": 1
+  "resent_attemtps": 1
 }
 ```
 
 - Field `id` is required and must be unique across all letters
-- Field `recent_attemtps` is optional and indicates the number of recent attempts made for this message.
+- Field `resent_attemtps` is optional and indicates the number of re-send attempts made for this message.
 
 There is a 2nd topic with name `read_letters`, which is used to count the total number of processed messages. 
 The dashboard app is basically just an interface to this topic, and collects other useful statistics along the way.
@@ -57,7 +57,7 @@ Here the sequence of steps to perform (most of these steps will be covered in ne
 
 # Environment settings
 
-The Spring Cloud GCP Core Boot starter can be auto-configured using properties from the properties file (`src/main/resources/application.yml`) 
+The Spring Cloud GCP Core Boot starter can be auto-configured using properties from the properties file (`src/main/resources/application.yaml`) 
 which always have precedence over the Spring Boot configuration.
 
 The GCP project ID is auto-configured from the `GOOGLE_CLOUD_PROJECT` environment variable, among several other sources. 
@@ -95,23 +95,6 @@ To access cloud instances the SSH key is needed, it can be created using the fol
 ssh-keygen -t rsa -f ~/.ssh/pubsub_rsa -C $USERNAME -b 2048
 ```
 
-# Kubernetes
-
-Authorise your installation of kubectl to work with GKE cluster:
-```
-gcloud container clusters get-credentials letter-processing-cluster --zone=europe-west2
-```
-As a result, the configuration entry will be generated and persisted in file `$HOME/.kube/config`
-Note: Running gcloud container clusters get-credentials also changes the current context for kubectl to that cluster, i.e. 
-from this moment all k8s commands will be tied with  letter-processing-cluster, for example:
-
-
-```
-kubectl get pods --all-namespaces
-kubectl describe hpa
-```
-
-
 # Settings on GCP side
 
 (0) For convenience and generalization, set the env variable GOOGLE_CLOUD_PROJECT in file set_env.sh to your project id, f.e. 
@@ -130,8 +113,8 @@ After successful creation project_id must be visible via command `gcloud project
 (3) Build an image with app and push it to GCloud private docker registry, f.e. :
 
 ```
-sudo docker build -t gcp-dashboard:0.0.4 ./dashboard/
-sudo docker build -t gcp-letter-reader:0.0.4 ./letter-reader/
+sudo docker build -t gcp-dashboard:0.0.1 ./dashboard/
+sudo docker build -t gcp-letter-reader:0.0.1 ./letter-reader/
 ```
 
 Docker image can be tested with the help of command (`ctrl+shift+c` to stop):
@@ -219,6 +202,28 @@ java --version
 ```
 Note, instance ID (here it's `proc-vm-d1c76370a95aa91c`) may change after each recreation.
 
+# Kubernetes
+
+This step must be performed after creating all resources at GCP.
+Authorise your installation of kubectl to work with GKE cluster:
+
+```
+gcloud container clusters get-credentials letter-processing-cluster --zone=europe-west2
+```
+As a result, the configuration entry will be generated and persisted in file `$HOME/.kube/config`
+
+Note: Running `gcloud container clusters get-credentials` also changes the current context for kubectl to that cluster, i.e. 
+from this moment all k8s commands will be tied with  letter-processing-cluster.
+For example, one can look up existing namespaces and pods:
+
+
+```
+kubectl get pods --all-namespaces
+kubectl describe hpa
+```
+
+
+
 ## Clean up
 
 (1) First, destroy the resources created by Terraform: 
@@ -231,7 +236,7 @@ terraform apply -destroy
 
 Here and next a recipe from [5] is applied
 
-First, deploying the Custom Metrics Adapter:
+In this project we are using Custom Metrics Adapter:
 
 ```
 https://cloud.google.com/kubernetes-engine/docs/tutorials/autoscaling-metrics#step1
@@ -239,7 +244,8 @@ https://cloud.google.com/kubernetes-engine/docs/tutorials/autoscaling-metrics#st
 
 The name of metric can be picked up from [metrics-explorer](https://console.cloud.google.com/monitoring/metrics-explorer)
 
-Here we are using `pubsub.googleapis.com|subscription|num_undelivered_messages`
+Here we are using `pubsub.googleapis.com|subscription|num_undelivered_messages`, see 
+the file `terraform/k8s/autoscaler.tf` for details
 
 Created metrics are available via GKE -> Workloads -> letter-reader -> Autoscaler
 

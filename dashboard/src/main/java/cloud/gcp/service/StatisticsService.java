@@ -3,6 +3,9 @@ package cloud.gcp.service;
 import cloud.gcp.exception.NotFoundException;
 import cloud.gcp.model.StatisticsRecord;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.core.io.Resource;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -15,9 +18,11 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 @Slf4j
+@ConfigurationProperties(prefix = "dashboard")
 public class StatisticsService {
 
-    private final static int maxSize = 1000;
+    @Value("${dashboard.max-size}")
+    private int maxSize;
 
     private SynchronizedLinkedList<StatisticsRecord> statistics;
     private StatisticsRecord curStatisticsRecord = new StatisticsRecord();
@@ -61,7 +66,8 @@ public class StatisticsService {
 
     @Scheduled(fixedRate = 1, timeUnit = TimeUnit.MINUTES)
     public void makeSnapshot() {
-        log.info("makeSnapshot");
+        log.info("making snapshot");
+        log.info("maxSize {}", maxSize);
         this.add(curStatisticsRecord.snapshot());
     }
 
@@ -81,8 +87,8 @@ public class StatisticsService {
         return this.statistics.copy(size);
     }
 
-    private String toCSV() {
-        return null;
+    public Resource toCSV() {
+        return LocalStorage.getResource(this.getAllList());
     }
 
 }

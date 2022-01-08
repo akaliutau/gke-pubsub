@@ -39,3 +39,6 @@ spring:
         subscriber:
           executor-threads: 1
           parallel-pull-count: 1
+
+reader:
+  time-to-read-sec: 30
