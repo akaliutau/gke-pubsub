@@ -42,7 +42,7 @@ Here the sequence of steps to perform (most of these steps will be covered in ne
 * Deploy a Kubernetes cluster using Terraform to Google Cloud
 * Deploy one instance of the `letter-reader` Docker image to the Kubernetes cluster
 * Deploy one instance of the `dashboard` Docker image to the Kubernetes cluster
-* Scale out the core processing part of the cluster to 3 instances of the `letter-reader` application without any changes 
+* Scale out the core processing part of the cluster to 10 instances of the `letter-reader` application without any changes 
   to production java code
 
 
@@ -241,6 +241,7 @@ In this project we are using Custom Metrics Adapter:
 ```
 https://cloud.google.com/kubernetes-engine/docs/tutorials/autoscaling-metrics#step1
 ```
+It's running as a separate service in isolated container, and is defined as `kubernetes_service_account.metrics_driver` resource in terraform.
 
 The name of metric can be picked up from [metrics-explorer](https://console.cloud.google.com/monitoring/metrics-explorer)
 
@@ -316,6 +317,9 @@ when running a terraform command
 *Outputs*: sometimes a variable is needed which is only known after terraform has done a change on a cloud provider — 
 f.e. ip-addresses that are given to application. So output serves as an intermediate holding agent - 
 it takes that value and exposes it to your variables
+
+Terraform automatically resolves dependencies, but sometimes cannot determine the order due to complex or circular dependencies.
+In this case successful deployment can be achieved by applying command `terraform apply` twice 
 
 # Appendix 3. Docker commands
 
